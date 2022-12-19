@@ -10,8 +10,22 @@ func main() {
 	addr := "0.0.0.0:8080"
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", rootHandler)
+	handler := newContentTypeJson(mux)
 	log.Printf("Server running on %v\n", addr)
-	log.Fatal(http.ListenAndServe(addr, mux))
+	log.Fatal(http.ListenAndServe(addr, handler))
+}
+
+type contentTypeJson struct {
+	handler http.Handler
+}
+
+func newContentTypeJson(handler http.Handler) *contentTypeJson {
+	return &contentTypeJson{handler}
+}
+
+func (ctj *contentTypeJson) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content-Type", "application/json")
+	ctj.handler.ServeHTTP(w, r)
 }
 
 type snake struct {
