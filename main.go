@@ -10,9 +10,27 @@ func main() {
 	addr := "0.0.0.0:8080"
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", rootHandler)
-	handler := newContentTypeJson(mux)
+	handler := newContentTypeJson(newExpectJson(mux))
 	log.Printf("Server running on %v\n", addr)
 	log.Fatal(http.ListenAndServe(addr, handler))
+}
+
+type expectJson struct {
+	handler http.Handler
+}
+
+func newExpectJson(handler http.Handler) *expectJson {
+	return &expectJson{handler}
+}
+
+func (ej *expectJson) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Body == nil || r.Body == http.NoBody {
+		ej.handler.ServeHTTP(w, r)
+	} else if r.Header.Get("Content-Type") != "application/json" {
+		http.Error(w, "Invalid Content-Type Header", http.StatusBadRequest)
+	} else {
+		ej.handler.ServeHTTP(w, r)
+	}
 }
 
 type contentTypeJson struct {
