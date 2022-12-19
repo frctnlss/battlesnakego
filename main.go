@@ -65,6 +65,15 @@ func newDefaultSnake() *snake {
 }
 
 func rootHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodGet:
+		rootGet(w, r)
+	default:
+		http.NotFound(w, r)
+	}
+}
+
+func rootGet(w http.ResponseWriter, r *http.Request) {
 	response, err := json.Marshal(newDefaultSnake())
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
