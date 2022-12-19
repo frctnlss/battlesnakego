@@ -10,6 +10,7 @@ func main() {
 	addr := "0.0.0.0:8080"
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", rootHandler)
+	mux.HandleFunc("/start", startHandler)
 	handler := newContentTypeJson(newExpectJson(mux))
 	log.Printf("Server running on %v\n", addr)
 	log.Fatal(http.ListenAndServe(addr, handler))
@@ -80,4 +81,76 @@ func rootGet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write(response)
+}
+
+type battleSnakeRequest struct {
+	Game  game        `json:"game"`
+	Turn  uint16      `json:"turn"`
+	Board board       `json:"board"`
+	You   battleSnake `json:"you"`
+}
+
+type game struct {
+	Id      string  `json:"id"`
+	Ruleset ruleset `json:"ruleset"`
+	Map     string  `json:"map"`
+	Timeout uint16  `json:"timeout"`
+	Source  string  `json:"source"`
+}
+
+type ruleset struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
+}
+
+type board struct {
+	Height  uint8         `json:"height"`
+	Width   uint8         `json:"width"`
+	Food    []grid        `json:"food"`
+	Hazards []grid        `json:"hazards"`
+	Snakes  []battleSnake `json:"snakes"`
+}
+
+type grid struct {
+	X uint8 `json:"x"`
+	Y uint8 `json:"y"`
+}
+
+type battleSnake struct {
+	Id             string         `json:"id"`
+	Name           string         `json:"name"`
+	Health         uint8          `json:"health"`
+	Body           []grid         `json:"body"`
+	Latency        string         `json:"latency"`
+	Head           grid           `json:"head"`
+	Length         uint16         `json:"length"`
+	Shout          string         `json:"shout"`
+	Squad          string         `json:"squad"`
+	Customizations customizations `json:"customizations"`
+}
+
+type customizations struct {
+	Color string `json:"color"`
+	Head  string `json:"head"`
+	Tail  string `json:"tail"`
+}
+
+func startHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPost:
+		startPost(w, r)
+	default:
+		http.NotFound(w, r)
+	}
+}
+
+func startPost(w http.ResponseWriter, r *http.Request) {
+	payload := &battleSnakeRequest{}
+	err := json.NewDecoder(r.Body).Decode(payload)
+	if err != nil {
+		log.Fatalln(err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 }
