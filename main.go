@@ -24,13 +24,13 @@ func newExpectJson(handler http.Handler) *expectJson {
 }
 
 func (ej *expectJson) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Body == nil || r.Body == http.NoBody {
-		ej.handler.ServeHTTP(w, r)
-	} else if r.Header.Get("Content-Type") != "application/json" {
+	isEmptyBody := r.Body == nil || r.Body == http.NoBody
+	isApplicationJson := r.Header.Get("Content-Type") == "application/json"
+	if !isEmptyBody && !isApplicationJson {
 		http.Error(w, "Invalid Content-Type Header", http.StatusBadRequest)
-	} else {
-		ej.handler.ServeHTTP(w, r)
+		return
 	}
+	ej.handler.ServeHTTP(w, r)
 }
 
 type contentTypeJson struct {
