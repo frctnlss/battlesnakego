@@ -11,6 +11,8 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", rootHandler)
 	mux.HandleFunc("/start", startHandler)
+	mux.HandleFunc("/move", moveHandler)
+	mux.HandleFunc("/end", endHandler)
 	handler := newContentTypeJson(newExpectJson(mux))
 	log.Printf("Server running on %v\n", addr)
 	log.Fatal(http.ListenAndServe(addr, handler))
@@ -145,6 +147,46 @@ func startHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func startPost(w http.ResponseWriter, r *http.Request) {
+	payload := &battleSnakeRequest{}
+	err := json.NewDecoder(r.Body).Decode(payload)
+	if err != nil {
+		log.Fatalln(err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func moveHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPost:
+		movePost(w, r)
+	default:
+		http.NotFound(w, r)
+	}
+}
+
+func movePost(w http.ResponseWriter, r *http.Request) {
+	payload := &battleSnakeRequest{}
+	err := json.NewDecoder(r.Body).Decode(payload)
+	if err != nil {
+		log.Fatalln(err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}
+
+func endHandler(w http.ResponseWriter, r *http.Request) {
+	switch r.Method {
+	case http.MethodPost:
+		endPost(w, r)
+	default:
+		http.NotFound(w, r)
+	}
+}
+
+func endPost(w http.ResponseWriter, r *http.Request) {
 	payload := &battleSnakeRequest{}
 	err := json.NewDecoder(r.Body).Decode(payload)
 	if err != nil {
