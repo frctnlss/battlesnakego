@@ -113,6 +113,39 @@ type board struct {
 	Snakes  []battleSnake `json:"snakes"`
 }
 
+func (b *board) EdgeMovementClockwise(position *grid) string {
+	bottom := uint8(0)
+	left := uint8(0)
+	top := b.Height - uint8(1)
+	right := b.Width - uint8(1)
+	bottomLeft := &grid{X: left, Y: bottom}
+	bottomRight := &grid{X: right, Y: bottom}
+	topLeft := &grid{X: left, Y: top}
+	topRight := &grid{X: right, Y: top}
+
+	if reflect.DeepEqual(position, bottomLeft) {
+		return "up"
+	} else if reflect.DeepEqual(position, bottomRight) {
+		return "left"
+	} else if reflect.DeepEqual(position, topLeft) {
+		return "right"
+	} else if reflect.DeepEqual(position, topRight) {
+		return "down"
+	}
+
+	if position.X == left {
+		return "up"
+	} else if position.Y == bottom {
+		return "left"
+	} else if position.X == right {
+		return "down"
+	} else if position.Y == top {
+		return "right"
+	}
+
+	return ""
+}
+
 type grid struct {
 	X uint8 `json:"x"`
 	Y uint8 `json:"y"`
@@ -166,6 +199,10 @@ func moveHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type moveResponse struct {
+	Move string `json:"move"`
+}
+
 func movePost(w http.ResponseWriter, r *http.Request) {
 	payload := &battleSnakeRequest{}
 	err := json.NewDecoder(r.Body).Decode(payload)
@@ -174,7 +211,14 @@ func movePost(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+	log.Printf("%+v\n", payload)
+	result, err := json.Marshal(&moveResponse{Move: payload.Board.EdgeMovementClockwise(&payload.You.Head)})
+	if err != nil {
+		log.Fatalln(err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+	w.Write(result)
 }
 
 func endHandler(w http.ResponseWriter, r *http.Request) {
